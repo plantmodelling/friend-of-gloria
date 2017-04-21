@@ -65,7 +65,7 @@ shinyUI(fluidPage(
            tabsetPanel(
              tabPanel("Global data",
                       tags$hr(),
-                      selectInput("variable", label = "Select variable", choices = c("area", "length", "convexhull", "angle", "depth", "width"), selected = 1),
+                      selectInput("variable", label = "Select variable", choices = c("length", "area", "n_segments", "convexhull", "angle", "depth", "width"), selected = 1),
                       plotlyOutput("sizePlot")
              ),
              tabPanel("Profile data",

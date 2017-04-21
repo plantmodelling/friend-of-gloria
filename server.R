@@ -129,7 +129,7 @@ shinyServer(
           dates <- unique(global$date)
           
           
-          local2 <- ddply(local1, .(image, type), summarise, angle=mean(angle), length=sum(length))
+          local2 <- ddply(local1, .(image, type), summarise, angle=mean(angle), n_segments=length(length), length=sum(length))
           # length2 <- ddply(local1, .(image, type), summarise, local_length=sum(length))
           
           
