@@ -39,7 +39,7 @@ shinyUI(fluidPage(
         tabPanel("Your data",
                  fileInput('global_file', 'Choose global data File', accept=c('text/comma-separated-values', '.csv')),
                  fileInput('local_file', 'Choose local data File', accept=c('text/comma-separated-values', '.csv')),
-                 fileInput('dir_file', 'Choose directionality data File', accept=c('text/comma-separated-values', '.csv')),
+                 # fileInput('dir_file', 'Choose directionality data File', accept=c('text/comma-separated-values', '.csv')),
                  fileInput('roi_file', 'Choose ROI data File', accept=c('text/comma-separated-values', '.csv')),
                  fileInput('genotype_file', 'Choose genotype datafile', accept=c('text/comma-separated-values', '.csv')),
                  actionButton(inputId = "load_data", label="Start analysis",icon("paper-plane"), 
@@ -62,10 +62,18 @@ shinyUI(fluidPage(
     ), 
   
     column(6,
-           h4("3. View the root data"),
-           tags$hr(),
-           selectInput("variable", label = "Select variable", choices = c("area", "length", "convexhull", "angle", "depth", "width"), selected = 1),
-           plotlyOutput("sizePlot")
+           tabsetPanel(
+             tabPanel("Global data",
+                      tags$hr(),
+                      selectInput("variable", label = "Select variable", choices = c("area", "length", "convexhull", "angle", "depth", "width"), selected = 1),
+                      plotlyOutput("sizePlot")
+             ),
+             tabPanel("Profile data",
+                      tags$hr(),
+                      selectInput("variable2", label = "Select variable", choices = c("length", "angle"), selected = 1),
+                      plotlyOutput("profilePlot")
+             )
+           )
     )
     
 

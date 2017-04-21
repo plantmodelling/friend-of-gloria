@@ -43,7 +43,8 @@ shinyServer(
                          shape=NULL, 
                          genotypes=NULL, 
                          dates=NULL,
-                         rois = NULL)
+                         rois = NULL,
+                         profiles = NULL)
     
     # For the root paramerers
     observe({
@@ -86,15 +87,15 @@ shinyServer(
         withProgress(message = 'Loading data', {
 
           # # LOAD THE DIFFERENT DATAFILE GENERATED WITH GLORIA
-          # global <- fread("/Users/g.lobet/Desktop/HL_Exp6/root-data-global.csv")
-          # local <- fread("/Users/g.lobet/Desktop/HL_Exp6/root-data-local.csv")
-          # direction <- fread("/Users/g.lobet/Desktop/HL_Exp6/root-data-dir.csv")
-          # rois <- fread("/Users/g.lobet/Desktop/HL_Exp6/root-data-roi.csv")
-          # genotypes <- read.csv("/Users/g.lobet/Desktop/HL_Exp6/genotypes.csv")
+          # global <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-global.csv")
+          # local1 <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-local.csv")
+          # direction <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-dir.csv")
+          # rois <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-roi.csv")
+          # genotypes <- read.csv("/Users/g.lobet/Desktop/Work/HL_Exp6/genotypes.csv")
           
           inGlobal <- input$global_file
           inLocal <- input$local_file
-          inDir <- input$dir_file
+          # inDir <- input$dir_file
           inROI <- input$roi_file
           inGen <- input$genotype_file
           
@@ -102,7 +103,7 @@ shinyServer(
           if(!is.null(inLocal)) local1 <- fread(inLocal$datapath)
           if(!is.null(inGen)) genotypes <- read.csv(inGen$datapath)
           if(!is.null(inROI)) rois <- fread(inROI$datapath)
-          if(!is.null(inDir)) direction <- fread(inDir$datapath)
+          # if(!is.null(inDir)) direction <- fread(inDir$datapath)
           
         })
 
@@ -124,30 +125,41 @@ shinyServer(
           sps <- strsplit(local1$image, "-")
           local1$date <- paste(unlist(lapply(sps, `[[`, 3)),unlist(lapply(sps, `[[`, 4)),unlist(lapply(sps, `[[`, 5)),sep="-")
           local1$root <- unlist(lapply(sps, `[[`, 2))
-          
+
           dates <- unique(global$date)
           
           
-          direction <- ddply(direction, .(image), summarise, directionality=sum(angle*count))
-          direction2 <- ddply(local1, .(image), summarise, local_angle=mean(angle))
-
-          length2 <- ddply(local1, .(image), summarise, local_length=sum(length))
+          local2 <- ddply(local1, .(image, type), summarise, angle=mean(angle), length=sum(length))
+          # length2 <- ddply(local1, .(image, type), summarise, local_length=sum(length))
           
-          global <- merge(global, direction, by="image")
-          global <- merge(global, direction2, by="image")
-          global <- merge(global, length2, by="image")
-
-          global$length <- global$local_length
-          global$angle <- global$local_angle
-
+          
+          # Create the profile database
+          profiles <- local2[local2$type != "total",]
+          sps <- strsplit(profiles$image, "-")
+          profiles$date <- paste(unlist(lapply(sps, `[[`, 3)),unlist(lapply(sps, `[[`, 4)),unlist(lapply(sps, `[[`, 5)),sep="-")
+          profiles$root <- unlist(lapply(sps, `[[`, 2))
+          for(i in c(1:nrow(genotypes))){
+            id <- as.character(genotypes$id[i])
+            profiles$genotype[grepl(id, profiles$image)] <- as.character(genotypes$genotype[i])
+          }
+          profiles$depth <- as.numeric(gsub("layer_", "", profiles$type))
+          profiles <- melt(profiles, id.vars = c("image", "genotype", "date", "root", "type", "depth"))
+          
+          
+          # global <- merge(global, direction1, by="image")
+          global <- merge(global, local2[local2$type == "total",], by="image")
+          # global <- merge(global, length2, by="image")
+          
+          global <- global[,-c("type", "lenght")]
           global <- melt(global, id.vars = c("image", "genotype", "date", "root"))
           
           rs$global <- global
-          rs$local <- local1
+          rs$local <- local1[local1$type == "total",]
           # rs$direction <- direction
           rs$dates <- dates
           rs$genotypes <- genotypes
           rs$rois <- rois
+          rs$profiles <- profiles
         })
     })
         
@@ -166,15 +178,6 @@ shinyServer(
       temp <- rs$local[grepl(input$root, rs$local$image),]
       temp1 <- temp[temp$date == rs$dates[input$date],]
 
-      # temp2 <- rois[grepl(root, rois$image),]
-      # temp2 <- temp2[grepl(dates[1], temp2$image),]
-      # temp3 <- temp2[temp2$type == "convex",]
-      # temp2 <- temp2[temp2$type == "shape",]
-      # temp <- local[grepl(root, local$image),]
-      # temp1 <- temp[temp$date == dates[1],]
-      
-      # temp2$atan <- atan2(temp2$y - mean(temp2$y), temp2$x - mean(temp2$x))
-      # temp2 <- temp2[order(temp2$atan),]
       temp3$atan <- atan2(temp3$y - mean(temp3$y), temp3$x - mean(temp3$x))
       temp3 <- temp3[order(temp3$atan),]
       
@@ -235,6 +238,43 @@ shinyServer(
       
       ggplotly(plot)
       })  
+    
+    output$profilePlot <- renderPlotly({
+      plot <- ggplot() +  theme_classic()
+      if(is.null(rs$profiles)){return(plot)}
+      
+      
+      # temp1 <- global[global$variable == input$variable,]
+      
+      if(!input$mean){
+        temp <- rs$profiles[rs$profiles$root == input$root & rs$profiles$variable == input$variable2,]
+        plot <- ggplot(data=temp, aes(-depth, value, colour=factor(date), group=date)) +
+          geom_line() +
+          geom_point(size=2) + 
+          # geom_point(size=2, colour="white") + 
+          ylab(input$variable2) + 
+          xlab("Depth layer") + 
+          theme_classic() +
+          coord_flip() +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        
+      }else{
+        temp <- rs$profiles[rs$profiles$date == rs$dates[input$date] & rs$profiles$variable == input$variable2,]
+        
+        plot <- ggplot(data=temp, aes(-depth, value, colour=factor(genotype), group=genotype)) +
+          stat_smooth() +
+          ylab(input$variable2) + 
+          xlab("Depth layer") + 
+          theme_classic() +
+          coord_flip() +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      
+      
+      
+      ggplotly(plot)
+    })     
+    
     
     
     
