@@ -72,6 +72,30 @@ shinyUI(fluidPage(
                       tags$hr(),
                       selectInput("variable2", label = "Select variable", choices = c("length", "angle"), selected = 1),
                       plotlyOutput("profilePlot")
+             ),
+             tabPanel("Download processed data",
+                      tabsetPanel(
+                        
+                        tabPanel("Global results",
+                                 downloadButton('download_global_data', 'Download full table'),
+                                 tags$hr(),
+                                 tableOutput('global_data'),
+                                 value=2
+                        ),
+                        
+                        tabPanel("Local results",
+                                 downloadButton('download_local_data', 'Download full table'),
+                                 tags$hr(),
+                                 tableOutput('local_data'),
+                                 value=2
+                        ),
+                        tabPanel("Profile results",
+                                 downloadButton('download_profile_data', 'Download full table'),
+                                 tags$hr(),
+                                 tableOutput('profile_data'),
+                                 value=2
+                        )
+                      )
              )
            )
     )

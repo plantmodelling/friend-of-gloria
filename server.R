@@ -87,11 +87,11 @@ shinyServer(
         withProgress(message = 'Loading data', {
 
           # # LOAD THE DIFFERENT DATAFILE GENERATED WITH GLORIA
-          # global <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-global.csv")
-          # local1 <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-local.csv")
+          # global <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-global.csv")
+          # local1 <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-local.csv")
           # direction <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-dir.csv")
-          # rois <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-roi.csv")
-          # genotypes <- read.csv("/Users/g.lobet/Desktop/Work/HL_Exp6/genotypes.csv")
+          # rois <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-roi.csv")
+          # genotypes <- read.csv("/Users/g.lobet/Desktop/NewGLORIAtest/genotypes.csv")
           
           inGlobal <- input$global_file
           inLocal <- input$local_file
@@ -163,6 +163,41 @@ shinyServer(
         })
     })
         
+    
+    output$global_data <- renderTable({
+      if(is.null(rs$global)){return()}
+      rs$global
+    })    
+    output$download_global_data <- downloadHandler(
+      filename = function() {"global_results.csv"},
+      content = function(file) {
+        write.csv(rs$global, file)
+      }
+    ) 
+    
+
+    output$profile_data <- renderTable({
+      if(is.null(rs$profiles)){return()}
+      rs$profiles
+    })    
+    output$download_profile_data <- downloadHandler(
+      filename = function() {"profile_results.csv"},
+      content = function(file) {
+        write.csv(rs$profiles, file)
+      }
+    )  
+        
+    output$local_data <- renderTable({
+      if(is.null(rs$local)){return()}
+      rs$local
+    })    
+    output$download_local_data <- downloadHandler(
+      filename = function() {"local_results.csv"},
+      content = function(file) {
+        write.csv(rs$local, file)
+      }
+    )     
+    
     
     # ----------------------------------------------------------------
     # Plot the root systems
