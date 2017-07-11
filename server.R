@@ -75,6 +75,8 @@ shinyServer(
       if(is.null(rs$dates)){return()}
       updateSliderInput(session, "date", min=1, max=length(rs$dates), value=rs$dates[1])
     }) 
+    
+    
     observeEvent(input$load_data, {
             
         #------------------------------------------------------
@@ -129,7 +131,8 @@ shinyServer(
           dates <- unique(global$date)
           
           
-          local2 <- ddply(local1, .(image, type), summarise, angle=mean(angle), n_segments=length(length), length=sum(length))
+          # Here, the angle is ponderated by the length of the segment, to account for longer semgent in the mean computation
+          local2 <- ddply(local1, .(image, type), summarise, angle=sum(angle*length)/sum(length), n_segments=length(length), length=sum(length))
           # length2 <- ddply(local1, .(image, type), summarise, local_length=sum(length))
           
           
