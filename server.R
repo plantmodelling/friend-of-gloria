@@ -44,7 +44,8 @@ shinyServer(
                          genotypes=NULL, 
                          dates=NULL,
                          rois = NULL,
-                         profiles = NULL)
+                         profiles = NULL,
+                         histogram = NULL)
     
     # For the root paramerers
     observe({
@@ -89,12 +90,11 @@ shinyServer(
         withProgress(message = 'Loading data', {
 
           # # LOAD THE DIFFERENT DATAFILE GENERATED WITH GLORIA
-          # global <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-global.csv")
-          # local1 <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-local.csv")
-          # direction <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-dir.csv")
-          # rois <- fread("/Users/g.lobet/Desktop/NewGLORIAtest/root-data-roi.csv")
-          # genotypes <- read.csv("/Users/g.lobet/Desktop/NewGLORIAtest/genotypes.csv")
-          
+          # global <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6//root-data-global.csv")
+          # local1 <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-local.csv")
+          # rois <- fread("/Users/g.lobet/Desktop/Work/HL_Exp6/root-data-roi.csv")
+          # genotypes <- read.csv("/Users/g.lobet/Desktop/Work/HL_Exp6/genotypes.csv")
+          # 
           inGlobal <- input$global_file
           inLocal <- input$local_file
           # inDir <- input$dir_file
@@ -130,6 +130,14 @@ shinyServer(
 
           dates <- unique(global$date)
           
+          local1$rangle <- round(local1$angle)
+          hist1 <- ddply(local1, .(genotype, rangle), summarize, n=sum(length/100))
+          
+          histogram <- NULL
+          for(i in c(1:nrow(hist1))){
+            histogram <- rbind(histogram, data.frame(angle=rep(hist1$rangle[i], hist1$n[i]),
+                                                     genotype=rep(hist1$genotype[i], hist1$n[i])))
+          }
           
           # Here, the angle is ponderated by the length of the segment, to account for longer semgent in the mean computation
           local2 <- ddply(local1, .(image, type), summarise, angle=sum(angle*length)/sum(length), n_segments=length(length), length=sum(length))
@@ -163,6 +171,7 @@ shinyServer(
           rs$genotypes <- genotypes
           rs$rois <- rois
           rs$profiles <- profiles
+          rs$histogram <- histogram
         })
     })
         
@@ -199,7 +208,19 @@ shinyServer(
       content = function(file) {
         write.csv(rs$local, file)
       }
-    )     
+    )  
+    
+    
+    output$hist_data <- renderTable({
+      if(is.null(rs$histogram)){return()}
+      rs$histogram
+    })    
+    output$download_hist_data <- downloadHandler(
+      filename = function() {"histogram_results.csv"},
+      content = function(file) {
+        write.csv(rs$histogram, file)
+      }
+    )      
     
     
     # ----------------------------------------------------------------
@@ -276,6 +297,17 @@ shinyServer(
       
       ggplotly(plot)
       })  
+    
+    output$histPlot <- renderPlotly({
+      plot <- ggplot() +  theme_classic()
+      if(is.null(rs$histogram)){return(plot)}
+      
+      plot <- ggplot(histogram, aes(angle, colour=genotype)) + 
+        geom_density(size=1.2) + 
+        theme_classic() 
+      
+      ggplotly(plot)
+    })
     
     output$profilePlot <- renderPlotly({
       plot <- ggplot() +  theme_classic()

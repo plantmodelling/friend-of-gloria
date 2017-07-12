@@ -42,6 +42,7 @@ shinyUI(fluidPage(
                  # fileInput('dir_file', 'Choose directionality data File', accept=c('text/comma-separated-values', '.csv')),
                  fileInput('roi_file', 'Choose ROI data File', accept=c('text/comma-separated-values', '.csv')),
                  fileInput('genotype_file', 'Choose genotype datafile', accept=c('text/comma-separated-values', '.csv')),
+                 # textInput("scale", "Scale [pixels / cm]", 138.6),
                  actionButton(inputId = "load_data", label="Start analysis",icon("paper-plane"), 
                               style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
                  
@@ -72,7 +73,13 @@ shinyUI(fluidPage(
                       tags$hr(),
                       selectInput("variable2", label = "Select variable", choices = c("length", "angle"), selected = 1),
                       plotlyOutput("profilePlot")
+                      
              ),
+             tabPanel("Histogram data",
+                      tags$hr(),
+                      plotlyOutput("histPlot")
+                      
+             ),             
              tabPanel("Download processed data",
                       tabsetPanel(
                         
@@ -93,6 +100,12 @@ shinyUI(fluidPage(
                                  downloadButton('download_profile_data', 'Download full table'),
                                  tags$hr(),
                                  tableOutput('profile_data'),
+                                 value=2
+                        ),
+                        tabPanel("Histogram results",
+                                 downloadButton('download_hist_data', 'Download full table'),
+                                 tags$hr(),
+                                 tableOutput('hist_data'),
                                  value=2
                         )
                       )
