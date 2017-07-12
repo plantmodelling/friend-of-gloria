@@ -131,12 +131,13 @@ shinyServer(
           dates <- unique(global$date)
           
           local1$rangle <- round(local1$angle)
-          hist1 <- ddply(local1, .(genotype, rangle), summarize, n=sum(length/100))
+          hist1 <- ddply(local1, .(date, genotype, rangle), summarize, n=sum(length/100))
           
           histogram <- NULL
           for(i in c(1:nrow(hist1))){
             histogram <- rbind(histogram, data.frame(angle=rep(hist1$rangle[i], hist1$n[i]),
-                                                     genotype=rep(hist1$genotype[i], hist1$n[i])))
+                                                     genotype=rep(hist1$genotype[i], hist1$n[i]),
+                                                     date=rep(hist1$date[i], hist1$n[i])))
           }
           
           # Here, the angle is ponderated by the length of the segment, to account for longer semgent in the mean computation
@@ -302,7 +303,9 @@ shinyServer(
       plot <- ggplot() +  theme_classic()
       if(is.null(rs$histogram)){return(plot)}
       
-      plot <- ggplot(histogram, aes(angle, colour=genotype)) + 
+      temp <- rs$histogram[rs$histogram$date == rs$dates[input$date],]
+      
+      plot <- ggplot(temp, aes(angle, colour=genotype)) + 
         geom_density(size=1.2) + 
         theme_classic() 
       
